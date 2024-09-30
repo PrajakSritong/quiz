@@ -1,10 +1,11 @@
 import React from "react";
-import { Bar } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement,
+  LineElement,
   Title,
   Tooltip,
   Legend,
@@ -13,7 +14,8 @@ import {
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement,
+  LineElement,
   Title,
   Tooltip,
   Legend
@@ -21,18 +23,19 @@ ChartJS.register(
 
 const getMonthlyData = (transactions) => {
   const currentDate = new Date();
-  const twoMonthsAgo = new Date();
-  twoMonthsAgo.setMonth(currentDate.getMonth() - 2);
+  const lastMonthDate = new Date();
+  lastMonthDate.setMonth(currentDate.getMonth() - 1);
 
   const monthlyData = {
+    months: [lastMonthDate, currentDate],
     income: Array(2).fill(0),
     expense: Array(2).fill(0),
   };
 
   transactions.forEach((transaction) => {
     const transactionDate = new Date(transaction.date);
-    if (transactionDate >= twoMonthsAgo && transactionDate <= currentDate) {
-      const monthIndex = currentDate.getMonth() - transactionDate.getMonth();
+    const monthIndex = transactionDate.getMonth() - lastMonthDate.getMonth();
+    if (monthIndex >= 0 && monthIndex < 2) {
       if (transaction.type === "income") {
         monthlyData.income[monthIndex] += transaction.amount;
       } else if (transaction.type === "expense") {
@@ -48,17 +51,25 @@ const IncomeExpenseChart = ({ transactions }) => {
   const monthlyData = getMonthlyData(transactions);
 
   const data = {
-    labels: ["Last Month", "Current Month"],
+    labels: monthlyData.months.map((date) =>
+      date.toLocaleString("default", { month: "long" })
+    ),
     datasets: [
       {
         label: "Income",
         data: monthlyData.income,
-        backgroundColor: "rgba(75, 192, 192, 0.6)",
+        borderColor: "rgba(75, 192, 192, 1)",
+        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        fill: true,
+        tension: 0.4,
       },
       {
         label: "Expenses",
         data: monthlyData.expense,
-        backgroundColor: "rgba(255, 99, 132, 0.6)",
+        borderColor: "rgba(255, 99, 132, 1)",
+        backgroundColor: "rgba(255, 99, 132, 0.2)",
+        fill: true,
+        tension: 0.4,
       },
     ],
   };
@@ -66,9 +77,7 @@ const IncomeExpenseChart = ({ transactions }) => {
   const options = {
     responsive: true,
     plugins: {
-      legend: {
-        position: "top",
-      },
+      legend: { position: "top" },
       title: {
         display: true,
         text: "Income and Expenses Over the Last 2 Months",
@@ -76,7 +85,7 @@ const IncomeExpenseChart = ({ transactions }) => {
     },
   };
 
-  return <Bar data={data} options={options} />;
+  return <Line data={data} options={options} />;
 };
 
 export default IncomeExpenseChart;
